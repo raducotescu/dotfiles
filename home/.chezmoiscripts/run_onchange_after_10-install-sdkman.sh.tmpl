@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+{{- if .work }}
+export SDKMAN_DIR="${HOME}/.sdkman"
+
+if [[ ! -s "${SDKMAN_DIR}/bin/sdkman-init.sh" ]]; then
+  curl -s "https://get.sdkman.io" | bash
+fi
+
+# SDKMAN scripts are not fully compatible with nounset.
+set +u
+source "${SDKMAN_DIR}/bin/sdkman-init.sh"
+
+install_sdk() {
+  local candidate="$1"
+  local version="$2"
+  local answer="${3:-n}"
+  local install_path="${SDKMAN_DIR}/candidates/${candidate}/${version}"
+
+  if [[ -d "${install_path}" ]]; then
+    return 0
+  fi
+
+  if ! sdk install "${candidate}" "${version}" <<< "${answer}"; then
+    if [[ -d "${install_path}" ]]; then
+      return 0
+    fi
+    return 1
+  fi
+}
+
+install_sdk java 8.0.472-amzn n
+install_sdk java 11.0.30-tem n
+install_sdk java 17.0.12-oracle n
+install_sdk java 21.0.10-oracle n
+install_sdk java 25.0.2-oracle n
+install_sdk maven 3.9.11 n
+curl -sSL https://github.com/rombert/desktop-maven-notifier/releases/download/desktop-maven-notifier-1.0.3/desktop-maven-notifier-1.0.3.jar -o ~/.sdkman/candidates/maven/3.9.11/lib/ext/desktop-maven-notifier-1.0.3.jar
+
+sdk default java 25.0.2-oracle
+set -u
+
+
+{{- end }}
