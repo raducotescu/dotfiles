@@ -1,0 +1,260 @@
+#!/usr/bin/env zsh
+
+# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
+# Initialization code that may require console input (password prompts, [y/n]
+# confirmations, etc.) must go above this block; everything else may go below.
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
+
+# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
+[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+if type brew &>/dev/null; then
+    FPATH=$(brew --prefix)/share/zsh-completions:$FPATH
+fi
+
+
+
+# Path to your oh-my-zsh installation.
+export ZSH=$HOME/.oh-my-zsh
+
+# Set name of the theme to load.
+# Look in ~/.oh-my-zsh/themes/
+# Optionally, if you set this to "random", it'll load a random theme each
+# time that oh-my-zsh is loaded.
+ZSH_THEME="powerlevel10k/powerlevel10k"
+
+# Uncomment the following line to use case-sensitive completion.
+# CASE_SENSITIVE="true"
+
+# Uncomment the following line to use hyphen-insensitive completion. Case
+# sensitive completion must be off. _ and - will be interchangeable.
+# HYPHEN_INSENSITIVE="true"
+
+# Uncomment the following line to disable bi-weekly auto-update checks.
+DISABLE_AUTO_UPDATE="true"
+
+# Uncomment the following line to change how often to auto-update (in days).
+# export UPDATE_ZSH_DAYS=1
+
+# Uncomment the following line to disable colors in ls.
+# DISABLE_LS_COLORS="true"
+
+# Uncomment the following line to disable auto-setting terminal title.
+# DISABLE_AUTO_TITLE="true"
+
+# Uncomment the following line to enable command auto-correction.
+ENABLE_CORRECTION="true"
+
+# Uncomment the following line to display red dots whilst waiting for completion.
+# COMPLETION_WAITING_DOTS="true"
+
+# Uncomment the following line if you want to disable marking untracked files
+# under VCS as dirty. This makes repository status check for large repositories
+# much, much faster.
+# DISABLE_UNTRACKED_FILES_DIRTY="true"
+
+# Uncomment the following line if you want to change the command execution time
+# stamp shown in the history command output.
+# The optional three formats: "mm/dd/yyyy"|"dd.mm.yyyy"|"yyyy-mm-dd"
+HIST_STAMPS="dd.mm.yyyy"
+
+# History configuration
+HISTFILE="$HOME/.zsh_history"
+HISTSIZE=100000
+SAVEHIST=$HISTSIZE
+
+# Smarter history behaviour
+setopt hist_ignore_all_dups      # remove older duplicate commands
+setopt hist_reduce_blanks        # trim superfluous whitespace
+setopt inc_append_history        # write commands immediately to history
+setopt share_history             # share history across all sessions
+setopt extended_history          # record timestamps with history entries
+setopt hist_ignore_space         # do not record commands starting with a space
+
+setopt auto_cd
+setopt interactive_comments
+
+# Would you like to use another custom folder than $ZSH/custom?
+# ZSH_CUSTOM=/path/to/new-custom-folder
+
+# Which plugins would you like to load? (plugins can be found in ~/.oh-my-zsh/plugins/*)
+# Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
+# Example format: plugins=(rails git textmate ruby lighthouse)
+# Add wisely, as too many plugins slow down shell startup.
+{{- $zshPlugins := list "git" "svn-fast-info" "brew" "docker" "npm" "macos" "colored-man-pages" "mvn" "mvn_patch" "git-custom" "history-substring-search" "zsh-autosuggestions" }}
+{{- if hasKey . "zshPlugins" }}
+{{-   $zshPlugins = .zshPlugins }}
+{{- end }}
+plugins=(
+{{- range $zshPlugins }}
+  {{ . }}
+{{- end }}
+)
+
+# User configuration
+[ -f "$HOME/.zsh-secrets" ] && source "$HOME/.zsh-secrets"
+
+test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
+
+#export SDKMAN_DIR="$HOME/.sdkman"
+#[[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
+
+export FZF_DEFAULT_COMMAND='(git ls-tree -r --name-only HEAD || fd --type f) 2> /dev/null'
+export FZF_DEFAULT_OPTS="--preview '[[ \$(file --mime {}) =~ binary ]] && echo {} is a binary file || (bat --style=numbers --color=always {} cat {}) 2> /dev/null | head -500'"
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+alias ccc="cd \`fd --no-ignore --type d . ~/workspace/adobe/code | fzf\`"
+
+export KUBECONFIG=$HOME/.kube/config #:$HOME/workspace/adobe/code/k8s-kubeconfig/kubeconfig.yaml
+. <(sky --quiet autocomplete --completion)
+
+export CM_URL="https://ssg.adobe.io"
+
+ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=#555555'
+
+# Improved completion behaviour
+zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=*'
+zstyle ':completion:*' menu select
+zstyle ':completion:*:descriptions' format '%F{yellow}%d%f'
+zstyle ':completion:*' group-name ''
+
+
+source $ZSH/oh-my-zsh.sh
+
+# Fast Syntax Highlighting
+# Requires: git clone https://github.com/zdharma-continuum/fast-syntax-highlighting \
+#   ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/fast-syntax-highlighting
+# avoid re-highlighting during bracketed paste
+pasteinit() {
+  # avoid clobbering if already in a paste
+  [[ -n $OLD_SELF_INSERT ]] && return
+  OLD_SELF_INSERT=${${(s.:.)widgets[self-insert]}[2,3]}
+  zle -N self-insert url-quote-magic # I wonder if you'd need `.url-quote-magic`?
+}
+
+pastefinish() {
+  # restore previous widget if we saved one
+  if [[ -n $OLD_SELF_INSERT ]]; then
+    zle -N self-insert $OLD_SELF_INSERT 2>/dev/null || true
+    unset OLD_SELF_INSERT
+  fi
+}
+
+zstyle :bracketed-paste-magic paste-init pasteinit
+zstyle :bracketed-paste-magic paste-finish pastefinish
+zle_highlight=('paste:none')
+autoload -Uz bracketed-paste-magic
+zle -N bracketed-paste bracketed-paste-magic
+source ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/fast-syntax-highlighting/fast-syntax-highlighting.plugin.zsh
+
+
+# Compilation flags
+# export ARCHFLAGS="-arch x86_64"
+
+# ssh
+# export SSH_KEY_PATH="~/.ssh/dsa_id"
+
+
+# Set personal aliases, overriding those provided by oh-my-zsh libs,
+# plugins, and themes. Aliases can be placed here, though oh-my-zsh
+# users are encouraged to define aliases within the ZSH_CUSTOM folder.
+# For a full list of active aliases, run `alias`.
+#
+# Example aliases
+alias zshconfig="code ~/.zshrc"
+alias ohmyzsh="code ~/.oh-my-zsh"
+
+# function vpn-up() {
+#   if [[ "$1" == "split" ]]
+#   then
+#     echo "Starting the vpn with split tunneling ..."
+#     up=`op item get wd2w4n4dod5lfqfiyf2agigyda --reveal --fields label=username,label=password`
+#     export gp_username=`echo $up | cut -d ',' -f 1`
+#     export gp_password=`echo $up | cut -d ',' -f 2`
+#     export OPENSSL_CONF=~/bin/openssl_unsafe_legacy_renegotiaion.conf
+#     ~/bin/cq-connect-auth.py ~/bin/cq-connect-auth.conf #> ~/bin/cq-connect-auth.log &
+#     unset gp_username
+#     unset gp_password
+#     unset OPENSSL_CONF
+#   else
+#     echo "NO!"
+#   fi
+# }
+
+# function vpn-split() {
+#   vpn-up split
+# }
+
+# function vpn-down() {
+#   sudo kill -2 `pgrep cq-commit-helper`
+# }
+
+function listening() {
+    if [ $# -eq 0 ]; then
+        sudo lsof -iTCP -sTCP:LISTEN -n -P
+    elif [ $# -eq 1 ]; then
+        sudo lsof -iTCP -sTCP:LISTEN -n -P | grep -i --color $1
+    else
+        echo "Usage: listening [pattern]"
+    fi
+}
+
+
+
+# eval "$(op completion zsh)"; compdef _op op
+
+if command -v kubectl &> /dev/null; then
+   source <(kubectl completion zsh)
+fi
+
+export GPG_TTY=$TTY
+
+# Home key - move to the beginning of the line
+bindkey '^[[H' beginning-of-line
+bindkey '^[OH' beginning-of-line
+
+# End key - move to the end of the line
+bindkey '^[[F' end-of-line
+bindkey '^[OF' end-of-line
+
+# Search history based on current input with Up/Down
+bindkey "^[[A" history-substring-search-up
+bindkey "^[[B" history-substring-search-down
+
+###-begin-nui-completions-###
+#
+# yargs command completion script
+#
+# Installation: /opt/homebrew/bin/nui bash-completion >> ~/.zshrc
+#    or /opt/homebrew/bin/nui bash-completion >> ~/.zsh_profile on OSX.
+#
+_nui_yargs_completions() {
+  local -a reply
+  local si=$IFS
+  IFS=$'\n' reply=($(COMP_CWORD="$((_CURRENT-1))" COMP_LINE="$_BUFFER" COMP_POINT="$_CURSOR" /opt/homebrew/bin/nui --get-yargs-completions "${words[@]}"))
+  IFS=$si
+
+  # Strip descriptions (if format is 'option:description') from all elements
+  reply=("${reply[@]%%:*}")
+
+  compadd -Q -a reply
+}
+
+compdef _nui_yargs_completions nui
+###-end-nui-completions-###
+
+export NVM_DIR="$HOME/.nvm"
+  [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"  # This loads nvm
+  [ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"  # This loads nvm bash_completion
+
+# export PATH="/opt/homebrew/opt/maven/bin:$PATH"
+# export PATH="$HOME/.jenv/bin:$PATH"
+# eval "$(jenv init -)"
+# The following lines have been added by Docker Desktop to enable Docker CLI completions.
+fpath=(/Users/radu/.docker/completions $fpath)
+# End of Docker CLI completions
+export API_GUIDELINES_PATH="/Users/radu/workspace/adobe/code/api-first-guidelines"
+export API_SCHEMAS_PATH="/Users/radu/workspace/adobe/code/api-schemas/api-first-schemas"
+export ASSETS_API_SCHEMA_PATH="/Users/radu/workspace/adobe/code/api-schemas/assets-api-schema"
+export GITHUB_TOKEN="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"

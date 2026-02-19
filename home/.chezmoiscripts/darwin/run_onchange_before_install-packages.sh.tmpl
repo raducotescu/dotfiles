@@ -1,0 +1,123 @@
+#!/usr/bin/env bash
+
+set -eufo pipefail
+
+tap "homebrew/core"
+tap "homebrew/cask"
+
+{{ $brews := list
+    "bash"
+    "bat"
+    "cloc"
+    "coreutils"
+    "fd"
+    "fish"
+    "fswatch"
+    "fzf"
+    "git"
+    "git-delta"
+    "git-filter-repo"
+    "git-lfs"
+    "go"
+    "helm"
+    "jq"
+    "ncdu"
+    "nmap"
+    "nvm"
+    "parallel"
+    "pinentry"
+    "shellcheck"
+    "shfmt"
+    "speedtest-cli"
+    "subversion"
+    "tree"
+    "watch"
+    "wget"
+    "xmlstarlet"
+    "yamllint"
+    "yarn"
+    "yq"
+    "zsh-completions"
+-}}
+
+{{ $casks := list
+    "1password-cli"
+    "1password"
+    "alfred"
+    "alcove"
+    "arc"
+    "bartender"
+    "betterdisplay"
+    "bettertouchtool"
+    "caffeine"
+    "chatgpt"
+    "coconutbattery"
+    "codex-app"
+    "disk-inventory-x"
+    "docker-desktop"
+    "fantastical"
+    "firefox"
+    "git-credential-manager"
+    "github"
+    "gpg-suite"
+    "google-chrome"
+    "home-assistant"
+    "istat-menus"
+    "iterm2"
+    "jetbrains-toolbox"
+    "logi-options+"
+    "microsoft-excel"
+    "microsoft-outlook"
+    "microsoft-powerpoint"
+    "microsoft-teams"
+    "microsoft-word"
+    "okta-verify"
+    "onedrive"
+    "pearcleaner"
+    "sf-symbols"
+    "shottr"
+    "slack"
+    "sourcetree"
+    "sublime-text"
+    "the-unarchiver"
+    "visual-studio-code"
+-}}
+
+{{ if .work -}}
+tap "adobe-marketing-cloud/brews"
+tap "azure/kubelogin"
+tap "experience-platform/internal", "git@git.corp.adobe.com:experience-platform/homebrew-internal.git"
+tap "foundation/foundation", "git@git.corp.adobe.com:foundation/homebrew-foundation.git"
+
+{{ $brews = concat $brews (list
+    "adobe-marketing-cloud/brews/repo"
+    "argoproj/tap/kubectl-argo-rollouts"
+    "azcopy"
+    "azure-cli"
+    "experience-platform/internal/cmcli"
+    "experience-platform/internal/skyline-ops-cli"
+    "k9s"
+    "maven-completion"
+    "opa"
+    "prometheus"
+    "wsk"
+) -}}
+
+{{ $casks = concat $casks (list
+    "claude"
+    "cursor"
+    "slack"
+    "vmware-fusion"
+    "workspace-one-intelligent-hub"
+) -}}
+
+{{ end -}}
+
+brew bundle --file=/dev/stdin <<EOF
+{{ range ($brews | sortAlpha | uniq) -}}
+brew "{{ . }}"
+{{ end -}}
+{{ range ($casks | sortAlpha | uniq) -}}
+cask "{{ . }}"
+{{ end -}}
+EOF

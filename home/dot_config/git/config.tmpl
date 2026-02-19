@@ -1,0 +1,55 @@
+[user]
+	name = Radu Cotescu
+	email = {{ .email }}
+{{- if .work }}
+	signingkey = {{ onepasswordRead "op://Adobe/ldoe4gail3rnpfrzynhxbjg4my/public key" | trim }}
+{{ end }}
+[difftool "sourcetree"]
+	cmd = opendiff \"$LOCAL\" \"$REMOTE\"
+	path = 
+[mergetool "sourcetree"]
+	cmd = /Applications/Sourcetree.app/Contents/Resources/opendiff-w.sh \"$LOCAL\" \"$REMOTE\" -ancestor \"$BASE\" -merge \"$MERGED\"
+	trustExitCode = true
+[commit]
+	gpgsign = true
+[init]
+	defaultBranch = main
+[filter "lfs"]
+	process = git-lfs filter-process
+	required = true
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+[gpg]
+	format = ssh
+[gpg "ssh"]
+	program = /Applications/1Password.app/Contents/MacOS/op-ssh-sign
+[color]
+	ui = auto
+[interactive]
+    diffFilter = delta --color-only
+
+[pager]
+    blame = delta
+
+[delta]
+    navigate = true  # use n and N to move between diff sections
+    side-by-side = true
+    hyperlinks = true
+    true-color = always
+[credential]
+	helper = 
+	helper = /usr/local/share/gcm-core/git-credential-manager
+
+{{- if .work }}
+[url "git@ghec.com:OneAdobe"]
+	insteadOf = git@github.com:OneAdobe
+[core]
+	excludesfile = /Users/radu/.gitignore_global
+	pager = delta
+[credential "https://gitbox.apache.org"]
+	provider = generic
+[credential "https://git.cloudmanager.adobe.com"]
+	useHttpPath = true	
+[credential "https://dev.azure.com"]
+	useHttpPath = true
+{{- end }}

@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+DRY_RUN="${CHEZMOI_DRY_RUN:-0}"
+
+if command -v brew >/dev/null 2>&1; then
+    brew_version_output="$(brew --version)"
+    first_line="${brew_version_output%%$'\n'*}"
+    echo "Homebrew already installed: $first_line"
+    exit 0
+fi
+
+if [[ "$DRY_RUN" == "1" ]]; then
+    echo "[dry-run] Homebrew is missing; would run Homebrew installer"
+    exit 0
+fi
+
+echo "Installing Homebrew..."
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
