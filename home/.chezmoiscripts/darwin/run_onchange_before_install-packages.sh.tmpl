@@ -2,8 +2,8 @@
 
 set -eufo pipefail
 
-tap "homebrew/core"
-tap "homebrew/cask"
+brew tap "homebrew/core"
+brew tap "homebrew/cask"
 
 {{ $brews := list
     "bash"
@@ -49,7 +49,6 @@ tap "homebrew/cask"
     "bartender"
     "betterdisplay"
     "bettertouchtool"
-    "caffeine"
     "chatgpt"
     "coconutbattery"
     "codex-app"
@@ -66,13 +65,7 @@ tap "homebrew/cask"
     "iterm2"
     "jetbrains-toolbox"
     "logi-options+"
-    "microsoft-excel"
-    "microsoft-outlook"
-    "microsoft-powerpoint"
-    "microsoft-teams"
-    "microsoft-word"
     "okta-verify"
-    "onedrive"
     "pearcleaner"
     "sf-symbols"
     "shottr"
@@ -84,10 +77,11 @@ tap "homebrew/cask"
 -}}
 
 {{ if .work -}}
-tap "adobe-marketing-cloud/brews"
-tap "azure/kubelogin"
-tap "experience-platform/internal", "git@git.corp.adobe.com:experience-platform/homebrew-internal.git"
-tap "foundation/foundation", "git@git.corp.adobe.com:foundation/homebrew-foundation.git"
+brew tap "adobe-marketing-cloud/brews"
+brew tap "argoproj/tap"
+brew tap "azure/kubelogin"
+brew tap "experience-platform/internal" "git@git.corp.adobe.com:experience-platform/homebrew-internal.git"
+brew tap "foundation/foundation" "git@git.corp.adobe.com:foundation/homebrew-foundation.git"
 
 {{ $brews = concat $brews (list
     "adobe-marketing-cloud/brews/repo"
@@ -107,17 +101,32 @@ tap "foundation/foundation", "git@git.corp.adobe.com:foundation/homebrew-foundat
     "claude"
     "cursor"
     "slack"
-    "vmware-fusion"
-    "workspace-one-intelligent-hub"
 ) -}}
 
 {{ end -}}
 
-brew bundle --file=/dev/stdin <<EOF
+brewfile="$(mktemp -t brewfile.XXXXXXXXXX)"
+trap 'rm -f "$brewfile"' EXIT
+
+# Ensure interactive prompts (e.g. sudo password) can read from a real terminal.
+if [[ ! -r /dev/tty ]]; then
+  echo "No TTY available for sudo prompts. Run 'sudo -v' first, then rerun chezmoi apply." >&2
+  exit 1
+fi
+
+
+cat >"$brewfile" <<EOF
 {{ range ($brews | sortAlpha | uniq) -}}
 brew "{{ . }}"
 {{ end -}}
-{{ range ($casks | sortAlpha | uniq) -}}
-cask "{{ . }}"
-{{ end -}}
 EOF
+
+brew bundle --file="$brewfile"
+
+casks=(
+{{- range ($casks | sortAlpha | uniq) }}
+  "{{ . }}"
+{{- end }}
+)
+
+brew install --cask "${casks[@]}"

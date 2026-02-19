@@ -104,12 +104,7 @@ test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell
 export FZF_DEFAULT_COMMAND='(git ls-tree -r --name-only HEAD || fd --type f) 2> /dev/null'
 export FZF_DEFAULT_OPTS="--preview '[[ \$(file --mime {}) =~ binary ]] && echo {} is a binary file || (bat --style=numbers --color=always {} cat {}) 2> /dev/null | head -500'"
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
-alias ccc="cd \`fd --no-ignore --type d . ~/workspace/adobe/code | fzf\`"
-
-export KUBECONFIG=$HOME/.kube/config #:$HOME/workspace/adobe/code/k8s-kubeconfig/kubeconfig.yaml
-. <(sky --quiet autocomplete --completion)
-
-export CM_URL="https://ssg.adobe.io"
+alias ccc="cd \`fd --no-ignore --type d . ~/workspace | fzf\`"
 
 ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=#555555'
 
@@ -165,31 +160,6 @@ source ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/fast-syntax-highlighting/fast-
 alias zshconfig="code ~/.zshrc"
 alias ohmyzsh="code ~/.oh-my-zsh"
 
-# function vpn-up() {
-#   if [[ "$1" == "split" ]]
-#   then
-#     echo "Starting the vpn with split tunneling ..."
-#     up=`op item get wd2w4n4dod5lfqfiyf2agigyda --reveal --fields label=username,label=password`
-#     export gp_username=`echo $up | cut -d ',' -f 1`
-#     export gp_password=`echo $up | cut -d ',' -f 2`
-#     export OPENSSL_CONF=~/bin/openssl_unsafe_legacy_renegotiaion.conf
-#     ~/bin/cq-connect-auth.py ~/bin/cq-connect-auth.conf #> ~/bin/cq-connect-auth.log &
-#     unset gp_username
-#     unset gp_password
-#     unset OPENSSL_CONF
-#   else
-#     echo "NO!"
-#   fi
-# }
-
-# function vpn-split() {
-#   vpn-up split
-# }
-
-# function vpn-down() {
-#   sudo kill -2 `pgrep cq-commit-helper`
-# }
-
 function listening() {
     if [ $# -eq 0 ]; then
         sudo lsof -iTCP -sTCP:LISTEN -n -P
@@ -200,13 +170,7 @@ function listening() {
     fi
 }
 
-
-
-# eval "$(op completion zsh)"; compdef _op op
-
-if command -v kubectl &> /dev/null; then
-   source <(kubectl completion zsh)
-fi
+eval "$(op completion zsh)"; compdef _op op
 
 export GPG_TTY=$TTY
 
@@ -222,6 +186,13 @@ bindkey '^[OF' end-of-line
 bindkey "^[[A" history-substring-search-up
 bindkey "^[[B" history-substring-search-down
 
+export NVM_DIR="$HOME/.nvm"
+  [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"  # This loads nvm
+  [ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"  # This loads nvm bash_completion
+
+fpath=(/Users/radu/.docker/completions $fpath)
+
+{{ if .work }}
 ###-begin-nui-completions-###
 #
 # yargs command completion script
@@ -244,17 +215,17 @@ _nui_yargs_completions() {
 compdef _nui_yargs_completions nui
 ###-end-nui-completions-###
 
-export NVM_DIR="$HOME/.nvm"
-  [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"  # This loads nvm
-  [ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"  # This loads nvm bash_completion
+export KUBECONFIG=$HOME/.kube/config #:$HOME/workspace/adobe/code/k8s-kubeconfig/kubeconfig.yaml
+. <(sky --quiet autocomplete --completion)
 
-# export PATH="/opt/homebrew/opt/maven/bin:$PATH"
-# export PATH="$HOME/.jenv/bin:$PATH"
-# eval "$(jenv init -)"
-# The following lines have been added by Docker Desktop to enable Docker CLI completions.
-fpath=(/Users/radu/.docker/completions $fpath)
+export CM_URL="https://ssg.adobe.io"
+
+if command -v kubectl &> /dev/null; then
+   source <(kubectl completion zsh)
+fi
 # End of Docker CLI completions
 export API_GUIDELINES_PATH="/Users/radu/workspace/adobe/code/api-first-guidelines"
 export API_SCHEMAS_PATH="/Users/radu/workspace/adobe/code/api-schemas/api-first-schemas"
 export ASSETS_API_SCHEMA_PATH="/Users/radu/workspace/adobe/code/api-schemas/assets-api-schema"
 export GITHUB_TOKEN="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"
+{{ end }}

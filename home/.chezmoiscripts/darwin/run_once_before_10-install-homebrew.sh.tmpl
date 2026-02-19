@@ -10,10 +10,5 @@ if command -v brew >/dev/null 2>&1; then
     exit 0
 fi
 
-if [[ "$DRY_RUN" == "1" ]]; then
-    echo "[dry-run] Homebrew is missing; would run Homebrew installer"
-    exit 0
-fi
-
 echo "Installing Homebrew..."
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
