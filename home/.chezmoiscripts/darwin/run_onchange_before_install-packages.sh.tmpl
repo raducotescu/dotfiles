@@ -2,9 +2,6 @@
 
 set -eufo pipefail
 
-brew tap "homebrew/core"
-brew tap "homebrew/cask"
-
 {{ $brews := list
     "bash"
     "bat"
@@ -107,6 +104,10 @@ brew tap "foundation/foundation" "git@git.corp.adobe.com:foundation/homebrew-fou
     "slack"
 ) -}}
 
+if [[ ! "$(command -v claude)" ]]; then
+    curl -fsSL https://claude.ai/install.sh | bash
+fi
+
 {{ end -}}
 
 brewfile="$(mktemp -t brewfile.XXXXXXXXXX)"
@@ -133,8 +134,6 @@ casks=(
 {{- end }}
 )
 
-brew install --cask "${casks[@]}"
+brew install --force --cask "${casks[@]}"
 
-if [[ ! "$(command -v claude)" ]]; then
-    curl -fsSL https://claude.ai/install.sh | bash
-fi
+
