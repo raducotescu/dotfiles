@@ -1,11 +1,25 @@
 HashKnownHosts no
+
+Host *
+  IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
+
+{{ if .personal }}
+Host rainmachine
+  HostName rainmachine
+  IdentityAgent none
+  IdentityFile ~/.ssh/id_rsa
+  HostKeyAlgorithms +ssh-rsa
+  PubkeyAcceptedAlgorithms +ssh-rsa
+  PubkeyAcceptedKeyTypes +ssh-rsa
+{{- end }}
+
 {{- if .work }}
 
 Host git.corp.adobe.com
-    HostName git.corp.adobe.com
-    IdentityFile /Users/radu/.ssh/git.corp.adobe.com/id_rsa
-    ConnectTimeout 5
-    WarnWeakCrypto no
+  HostName git.corp.adobe.com
+  IdentityFile /Users/radu/.ssh/git.corp.adobe.com/id_rsa
+  ConnectTimeout 5
+  WarnWeakCrypto no
 
 Host ssh.dev.azure.com
     HostName ssh.dev.azure.com
@@ -14,20 +28,17 @@ Host ssh.dev.azure.com
 Host github.com
   HostName github.com
   User git
-  IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
   IdentitiesOnly yes
   IdentityFile ~/.ssh/cotescu@adobe.com.pub
 
 Host ghec.com
   HostName github.com
   User git
-  IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
   IdentitiesOnly yes
   IdentityFile ~/.ssh/ghec.pub
 
 Match all
 Include banyan.config
 
-Host *
-  IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
 {{- end }}
+

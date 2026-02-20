@@ -26,7 +26,7 @@
 {{-   $email = "cotescu@adobe.com" -}}
 {{- end -}}
 
-{{- $zshPlugins:= list "git" "svn-fast-info" "brew" "docker" "npm" "macos" "colored-man-pages" "mvn" "mvn_patch" "git-custom" "history-substring-search" "zsh-autosuggestions" -}}
+{{- $zshPlugins:= list "history-substring-search" "zsh-autosuggestions" "fast-syntax-highlighting" "git" "git-custom" "vscode" "svn-fast-info" "brew" "docker" "npm" "macos" "colored-man-pages" "mvn" "mvn_patch" -}}
 {{- if $work -}}
 {{-   $zshPlugins = append $zshPlugins "kubectl" -}}
 {{- end -}}
