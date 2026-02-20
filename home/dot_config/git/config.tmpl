@@ -3,6 +3,8 @@
 	email = {{ .email }}
 {{- if .work }}
 	signingkey = {{ onepasswordRead "op://Adobe/ldoe4gail3rnpfrzynhxbjg4my/public key" | trim }}
+{{ else if .personal }}
+	signingkey = {{ onepasswordRead "op://Private/Private Ed25519 SSH Key/public key" | trim }}
 {{ end }}
 [difftool "sourcetree"]
 	cmd = opendiff \"$LOCAL\" \"$REMOTE\"

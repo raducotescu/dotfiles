@@ -29,4 +29,21 @@
 # More examples can be found here:
 #  https://developer.1password.com/docs/ssh/agent/config
 [[ssh-keys]]
+vault = "Private"
+item = "Private Ed25519 SSH Key"
+
+[[ssh-keys]]
+vault = "Private"
+item = "Private RSA SSH Key"
+
+[[ssh-keys]]
 vault = "Adobe"
+item = "SSH Key cotescu@adobe.com"
+
+[[ssh-keys]]
+vault = "Adobe"
+item = "SSH Key cotescu@adobe.com"
+
+[[ssh-keys]]
+vault = "Adobe"
+item = "Adobe GHEC auth key"
