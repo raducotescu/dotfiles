@@ -6,6 +6,10 @@
 {{ else if .personal }}
 	signingkey = {{ onepasswordRead "op://Private/Private Ed25519 SSH Key/public key" | trim }}
 {{ end }}
+[core]
+	excludesfile = /Users/radu/.config/git/ignore
+	pager = delta
+	editor = vim
 [difftool "sourcetree"]
 	cmd = opendiff \"$LOCAL\" \"$REMOTE\"
 	path = 
@@ -45,10 +49,6 @@
 {{- if .work }}
 [url "git@ghec.com:OneAdobe"]
 	insteadOf = git@github.com:OneAdobe
-[core]
-	excludesfile = /Users/radu/.gitignore_global
-	pager = delta
-	editor = vim
 [credential "https://gitbox.apache.org"]
 	provider = generic
 [credential "https://git.cloudmanager.adobe.com"]
