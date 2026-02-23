@@ -11,6 +11,10 @@ if [[ -d /opt/homebrew/bin ]]; then
   export PATH="/opt/homebrew/bin:$PATH"
 fi
 
+if [[ -d /home/linuxbrew/.linuxbrew/bin ]]; then
+  export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
+fi
+
 if [[ -d /opt/homebrew/opt/openssl@3/bin ]]; then
   export PATH="/opt/homebrew/opt/openssl@3/bin:$PATH"
 fi
