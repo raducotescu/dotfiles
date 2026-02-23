@@ -28,7 +28,7 @@ if command -v apt-get >/dev/null 2>&1; then
   sudo apt-get update
   install_packages \
     bash bat build-essential ca-certificates cloc curl fd-find fzf \
-    git git-lfs gnupg gnutls-bin golang jq mtr-tiny ncdu nmap parallel \
+    git git-delta git-lfs gnupg gnutls-bin golang jq mtr-tiny ncdu nmap parallel \
     pinentry-curses shellcheck shfmt speedtest-cli subversion tree watch \
     wget xmlstarlet yamllint yarn yq zsh
 elif command -v dnf >/dev/null 2>&1; then
@@ -37,7 +37,7 @@ elif command -v dnf >/dev/null 2>&1; then
   }
   sudo dnf makecache
   install_packages \
-    bash bat cloc curl fd-find fzf gcc gcc-c++ git git-lfs gnupg2 \
+    bash bat cloc curl fd-find fzf gcc gcc-c++ git git-delta git-lfs gnupg2 \
     gnutls-utils golang jq mtr ncdu nmap-ncat parallel pinentry \
     ShellCheck shfmt speedtest-cli subversion tree procps-ng wget xmlstarlet \
     yamllint yarn yq zsh
@@ -47,7 +47,7 @@ elif command -v pacman >/dev/null 2>&1; then
   }
   sudo pacman -Sy --noconfirm
   install_packages \
-    bash bat base-devel cloc curl fd fzf git git-lfs gnupg gnutls go \
+    bash bat base-devel cloc curl fd fzf git git-delta git-lfs gnupg gnutls go \
     jq mtr ncdu nmap parallel pinentry shellcheck shfmt speedtest-cli \
     subversion tree procps-ng wget xmlstarlet yamllint yarn yq zsh
 elif command -v zypper >/dev/null 2>&1; then
@@ -56,7 +56,7 @@ elif command -v zypper >/dev/null 2>&1; then
   }
   sudo zypper --non-interactive refresh
   install_packages \
-    bash bat cloc curl fd fzf gcc gcc-c++ git git-lfs gpg2 gnutls \
+    bash bat cloc curl fd fzf gcc gcc-c++ git git-delta git-lfs gpg2 gnutls \
     go jq mtr ncdu nmap parallel pinentry-curses ShellCheck shfmt \
     speedtest-cli subversion tree procps wget xmlstarlet yamllint yarn yq zsh
 else
