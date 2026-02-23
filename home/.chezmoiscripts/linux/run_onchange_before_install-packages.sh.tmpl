@@ -7,55 +7,29 @@ if [[ ! -r /dev/tty ]]; then
   exit 1
 fi
 
-install_packages() {
-  local failed=()
-
-  for pkg in "$@"; do
-    if ! install_one_package "$pkg"; then
-      failed+=("$pkg")
-    fi
-  done
-
-  if [[ "${#failed[@]}" -gt 0 ]]; then
-    echo "Packages not installed: ${failed[*]}" >&2
-  fi
-}
-
 if command -v apt-get >/dev/null 2>&1; then
-  install_one_package() {
-    sudo apt-get install -y --no-install-recommends "$1"
-  }
   sudo apt-get update
-  install_packages \
+  sudo apt-get install -y --no-install-recommends \
     bash bat build-essential ca-certificates cloc curl fd-find fzf \
     git git-delta git-lfs gnupg gnutls-bin golang jq mtr-tiny ncdu nmap parallel \
     pinentry-curses shellcheck shfmt speedtest-cli subversion tree watch \
     wget xmlstarlet yamllint yarn yq zsh
 elif command -v dnf >/dev/null 2>&1; then
-  install_one_package() {
-    sudo dnf install -y "$1"
-  }
   sudo dnf makecache
-  install_packages \
+  sudo dnf install -y \
     bash bat cloc curl fd-find fzf gcc gcc-c++ git git-delta git-lfs gnupg2 \
     gnutls-utils golang jq mtr ncdu nmap-ncat parallel pinentry \
     ShellCheck shfmt speedtest-cli subversion tree procps-ng wget xmlstarlet \
     yamllint yarn yq zsh
 elif command -v pacman >/dev/null 2>&1; then
-  install_one_package() {
-    sudo pacman -S --noconfirm --needed "$1"
-  }
   sudo pacman -Sy --noconfirm
-  install_packages \
+  sudo pacman -S --noconfirm --needed \
     bash bat base-devel cloc curl fd fzf git git-delta git-lfs gnupg gnutls go \
     jq mtr ncdu nmap parallel pinentry shellcheck shfmt speedtest-cli \
     subversion tree procps-ng wget xmlstarlet yamllint yarn yq zsh
 elif command -v zypper >/dev/null 2>&1; then
-  install_one_package() {
-    sudo zypper --non-interactive install --no-recommends "$1"
-  }
   sudo zypper --non-interactive refresh
-  install_packages \
+  sudo zypper --non-interactive install --no-recommends \
     bash bat cloc curl fd fzf gcc gcc-c++ git git-delta git-lfs gpg2 gnutls \
     go jq mtr ncdu nmap parallel pinentry-curses ShellCheck shfmt \
     speedtest-cli subversion tree procps wget xmlstarlet yamllint yarn yq zsh
