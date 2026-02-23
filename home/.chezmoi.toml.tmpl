@@ -35,6 +35,10 @@
 {{-   $zshPlugins = append $zshPlugins "kubectl" -}}
 {{- end -}}
 
+{{- if eq .chezmoi.os "linux" }}
+scriptTempDir = "{{ .chezmoi.homeDir }}/.cache/chezmoi/scripts"
+{{- end }}
+
 [data]
     email = {{ $email | quote }}
     work = {{ $work }}
