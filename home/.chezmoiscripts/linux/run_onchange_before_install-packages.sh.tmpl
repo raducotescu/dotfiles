@@ -7,29 +7,54 @@ if [[ ! -r /dev/tty ]]; then
   exit 1
 fi
 
+is_dsm7() {
+  [[ -f /etc.defaults/VERSION ]] || return 1
+  grep -Eq '^majorversion="7"$' /etc.defaults/VERSION
+}
+
+run_as_root() {
+  if [[ "$(id -u)" -eq 0 ]]; then
+    "$@"
+  elif command -v sudo >/dev/null 2>&1; then
+    sudo "$@"
+  else
+    echo "This step requires root privileges, but sudo is not available: $*" >&2
+    return 1
+  fi
+}
+
+if is_dsm7; then
+  echo "Detected Synology DSM 7."
+  cat >&2 <<'EOF'
+Skipping automatic package installation on DSM 7.
+Install required CLI tools manually, then rerun: chezmoi apply
+EOF
+  exit 0
+fi
+
 if command -v apt-get >/dev/null 2>&1; then
-  sudo apt-get update
-  sudo apt-get install -y --no-install-recommends \
+  run_as_root apt-get update
+  run_as_root apt-get install -y --no-install-recommends \
     bash bat build-essential ca-certificates cloc curl fd-find fzf \
     git git-delta git-lfs gnupg gnutls-bin golang jq mtr-tiny ncdu nmap parallel \
     pinentry-curses shellcheck shfmt speedtest-cli subversion tree watch \
     wget xmlstarlet yamllint yarn yq zsh
 elif command -v dnf >/dev/null 2>&1; then
-  sudo dnf makecache
-  sudo dnf install -y \
+  run_as_root dnf makecache
+  run_as_root dnf install -y \
     bash bat cloc curl fd-find fzf gcc gcc-c++ git git-delta git-lfs gnupg2 \
     gnutls-utils golang jq mtr ncdu nmap-ncat parallel pinentry \
     ShellCheck shfmt speedtest-cli subversion tree procps-ng wget xmlstarlet \
     yamllint yarn yq zsh
 elif command -v pacman >/dev/null 2>&1; then
-  sudo pacman -Sy --noconfirm
-  sudo pacman -S --noconfirm --needed \
+  run_as_root pacman -Sy --noconfirm
+  run_as_root pacman -S --noconfirm --needed \
     bash bat base-devel cloc curl fd fzf git git-delta git-lfs gnupg gnutls go \
     jq mtr ncdu nmap parallel pinentry shellcheck shfmt speedtest-cli \
     subversion tree procps-ng wget xmlstarlet yamllint yarn yq zsh
 elif command -v zypper >/dev/null 2>&1; then
-  sudo zypper --non-interactive refresh
-  sudo zypper --non-interactive install --no-recommends \
+  run_as_root zypper --non-interactive refresh
+  run_as_root zypper --non-interactive install --no-recommends \
     bash bat cloc curl fd fzf gcc gcc-c++ git git-delta git-lfs gpg2 gnutls \
     go jq mtr ncdu nmap parallel pinentry-curses ShellCheck shfmt \
     speedtest-cli subversion tree procps wget xmlstarlet yamllint yarn yq zsh
