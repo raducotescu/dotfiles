@@ -16,3 +16,7 @@
 {{ if ne .chezmoi.os "linux" }}
 .chezmoiscripts/linux/**
 {{ end }}
+
+{{ if .chezmoi.isDSM}}
+.chezmoiscripts/10-install-sdkman.sh
+{{ end }}
