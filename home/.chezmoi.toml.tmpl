@@ -1,6 +1,6 @@
 {{/* boolean feature tags */}}
 {{- $work := false -}}{{/* true if this machine is a work machine */}}
-{{- $personal := false -}}{{/* true if this machine should have personal secrets */}}
+{{- $personal := true -}}{{/* true if this machine should have personal secrets */}}
 {{- "" -}}
 
 {{- $osID := .chezmoi.os -}}
@@ -17,8 +17,6 @@
 
 {{-   if eq $hostname "cotescu-macos-2022" -}}
 {{-     $work = true -}}
-{{-   else if eq $hostname "radus-mbp-14" -}}
-{{-     $personal = true -}}
 {{-   end -}}
 
 {{- $email := "radu-likes-to-code@cotescu.com" -}}
@@ -34,6 +32,10 @@
 {{- if $work -}}
 {{-   $zshPlugins = append $zshPlugins "kubectl" -}}
 {{- end -}}
+
+{{- if eq .chezmoi.os "linux" }}
+scriptTempDir = "{{ .chezmoi.homeDir }}/.cache/chezmoi/scripts"
+{{- end }}
 
 {{- $isDSM := false -}}
 {{- if eq .chezmoi.os "linux" -}}
@@ -54,9 +56,6 @@
     personal = {{ $personal }}
     osid = {{ $osID | quote }}
     zshPlugins = [{{- range $index, $plugin := $zshPlugins }}{{ if $index }}, {{ end }}{{ $plugin | quote }}{{- end }}]
-    {{- if eq .chezmoi.os "linux" }}
-    scriptTempDir = "{{ .chezmoi.homeDir }}/.cache/chezmoi/scripts"
-    {{- end }}
     isDSM = {{ $isDSM }}
 
 
