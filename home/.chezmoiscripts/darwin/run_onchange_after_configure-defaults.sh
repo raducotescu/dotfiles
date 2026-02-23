@@ -3,7 +3,7 @@
 set -eufo pipefail
 
 # Controls two-finger swipe navigation (back/forward) behavior.
-defaults write -g AppleEnableSwipeNavigateWithScrolls -int 0
+defaults write -g AppleEnableSwipeNavigateWithScrolls -int 1
 # Controls whether windows minimize when double-clicking their title bar.
 defaults write -g AppleMiniaturizeOnDoubleClick -int 0
 # Controls press-and-hold for accented characters vs key repeat.
