@@ -24,55 +24,53 @@ run_as_root() {
 }
 
 if is_dsm7; then
-  {{ $brews := list
-    "bash"
-    "bat"
-    "cloc"
-    "coreutils"
-    "fd"
-    "fzf"
-    "ghostscript"
-    "git"
-    "git-delta"
-    "git-filter-repo"
-    "git-lfs"
-    "gnutls"
-    "iperf"
-    "jq"
-    "libraw"
-    "mtr"
-    "ncdu"
-    "nmap"
-    "nvm"
-    "parallel"
-    "pinentry"
-    "shellcheck"
-    "shfmt"
-    "speedtest-cli"
-    "subversion"
-    "tree"
-    "watch"
-    "wget"
-    "xmlstarlet"
-    "yamllint"
-    "yarn"
-    "yq"
-    "zsh-completions"
-  -}}
-  brewfile="$(mktemp -t brewfile.XXXXXXXXXX)"
-  trap 'rm -f "$brewfile"' EXIT
-
-  # Ensure interactive prompts (e.g. sudo password) can read from a real terminal.
-  if [[ ! -r /dev/tty ]]; then
-    echo "No TTY available for sudo prompts. Run 'sudo -v' first, then rerun chezmoi apply." >&2
-    exit 1
+  if ! command -v brew >/dev/null 2>&1; then
+    cat >&2 <<'EOF'
+Detected DSM 7 but Homebrew is not installed.
+Install Homebrew first, then rerun: chezmoi apply
+EOF
+    exit 0
   fi
 
+{{ $brews := list
+  "bash"
+  "bat"
+  "cloc"
+  "coreutils"
+  "fd"
+  "fzf"
+  "git"
+  "git-delta"
+  "git-filter-repo"
+  "git-lfs"
+  "gnutls"
+  "jq"
+  "mtr"
+  "ncdu"
+  "nmap"
+  "nvm"
+  "parallel"
+  "pinentry"
+  "shellcheck"
+  "shfmt"
+  "speedtest-cli"
+  "subversion"
+  "tree"
+  "watch"
+  "wget"
+  "xmlstarlet"
+  "yamllint"
+  "yarn"
+  "yq"
+  "zsh-completions"
+-}}
+  brewfile="$(mktemp)"
+  trap 'rm -f "$brewfile"' EXIT
 
-  cat >"$brewfile" <<EOF
-  {{ range ($brews | sortAlpha | uniq) -}}
-  brew "{{ . }}"
-  {{ end -}}
+cat >"$brewfile" <<EOF
+{{ range ($brews | sortAlpha | uniq) -}}
+brew "{{ . }}"
+{{ end -}}
 EOF
 
   brew bundle --file="$brewfile"
