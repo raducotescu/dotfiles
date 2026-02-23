@@ -26,7 +26,11 @@
 {{-   $email = "cotescu@adobe.com" -}}
 {{- end -}}
 
-{{- $zshPlugins:= list "history-substring-search" "zsh-autosuggestions" "fast-syntax-highlighting" "you-should-use" "git" "git-custom" "vscode" "svn-fast-info" "brew" "docker" "npm" "macos" "colored-man-pages" "mvn" "mvn_patch" -}}
+{{- $zshPlugins:= list "history-substring-search" "zsh-autosuggestions" "fast-syntax-highlighting" "you-should-use" "git" "git-custom" "svn-fast-info" "docker" "npm" "colored-man-pages" "mvn" "mvn_patch" -}}
+{{- if eq .chezmoi.os "darwin" -}}
+{{    $zshPlugins = concat $zshPlugins (list "vscode" "brew" "macos") -}}
+{{- end -}}
+
 {{- if $work -}}
 {{-   $zshPlugins = append $zshPlugins "kubectl" -}}
 {{- end -}}

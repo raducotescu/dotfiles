@@ -1,9 +1,9 @@
 [user]
 	name = Radu Cotescu
 	email = {{ .email }}
-{{- if .work }}
+{{- if and (eq .chezmoi.os "darwin") .work }}
 	signingkey = {{ onepasswordRead "op://Adobe/ldoe4gail3rnpfrzynhxbjg4my/public key" | trim }}
-{{ else if .personal }}
+{{ else if and (eq .chezmoi.os "darwin") .personal }}
 	signingkey = {{ onepasswordRead "op://Private/Private Ed25519 SSH Key/public key" | trim }}
 {{ end }}
 [core]
@@ -16,7 +16,11 @@
 	cmd = /Applications/Sourcetree.app/Contents/Resources/opendiff-w.sh \"$LOCAL\" \"$REMOTE\" -ancestor \"$BASE\" -merge \"$MERGED\"
 	trustExitCode = true
 [commit]
+{{- if eq .chezmoi.os "darwin" }}
 	gpgsign = true
+{{- else }}
+	gpgsign = false
+{{- end }}
 [init]
 	defaultBranch = main
 [filter "lfs"]
@@ -25,9 +29,11 @@
 	clean = git-lfs clean -- %f
 	smudge = git-lfs smudge -- %f
 [gpg]
+{{- if eq .chezmoi.os "darwin" }}
 	format = ssh
 [gpg "ssh"]
 	program = /Applications/1Password.app/Contents/MacOS/op-ssh-sign
+{{- end }}
 [color]
 	ui = auto
 [interactive]

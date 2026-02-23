@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+if [[ ! -r /dev/tty ]]; then
+  echo "No TTY available for sudo prompts. Run 'sudo -v' first, then rerun chezmoi apply." >&2
+  exit 1
+fi
+
+install_packages() {
+  local failed=()
+
+  for pkg in "$@"; do
+    if ! install_one_package "$pkg"; then
+      failed+=("$pkg")
+    fi
+  done
+
+  if [[ "${#failed[@]}" -gt 0 ]]; then
+    echo "Packages not installed: ${failed[*]}" >&2
+  fi
+}
+
+if command -v apt-get >/dev/null 2>&1; then
+  install_one_package() {
+    sudo apt-get install -y --no-install-recommends "$1"
+  }
+  sudo apt-get update
+  install_packages \
+    bash bat build-essential ca-certificates cloc curl fd-find ffmpeg fzf \
+    git git-lfs gnupg gnutls-bin golang helm jq mtr-tiny ncdu nmap parallel \
+    pinentry-curses shellcheck shfmt speedtest-cli subversion tree watch \
+    wget xmlstarlet yamllint yarn yq zsh
+elif command -v dnf >/dev/null 2>&1; then
+  install_one_package() {
+    sudo dnf install -y "$1"
+  }
+  sudo dnf makecache
+  install_packages \
+    bash bat cloc curl fd-find ffmpeg fzf gcc gcc-c++ git git-lfs gnupg2 \
+    gnutls-utils golang helm jq mtr ncdu nmap-ncat parallel pinentry \
+    ShellCheck shfmt speedtest-cli subversion tree procps-ng wget xmlstarlet \
+    yamllint yarn yq zsh
+elif command -v pacman >/dev/null 2>&1; then
+  install_one_package() {
+    sudo pacman -S --noconfirm --needed "$1"
+  }
+  sudo pacman -Sy --noconfirm
+  install_packages \
+    bash bat base-devel cloc curl fd ffmpeg fzf git git-lfs gnupg gnutls go \
+    helm jq mtr ncdu nmap parallel pinentry shellcheck shfmt speedtest-cli \
+    subversion tree procps-ng wget xmlstarlet yamllint yarn yq zsh
+elif command -v zypper >/dev/null 2>&1; then
+  install_one_package() {
+    sudo zypper --non-interactive install --no-recommends "$1"
+  }
+  sudo zypper --non-interactive refresh
+  install_packages \
+    bash bat cloc curl fd ffmpeg fzf gcc gcc-c++ git git-lfs gpg2 gnutls \
+    go helm jq mtr ncdu nmap parallel pinentry-curses ShellCheck shfmt \
+    speedtest-cli subversion tree procps wget xmlstarlet yamllint yarn yq zsh
+else
+  echo "No supported package manager found (apt-get, dnf, pacman, zypper)." >&2
+  exit 1
+fi

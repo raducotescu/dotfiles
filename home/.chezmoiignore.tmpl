@@ -12,3 +12,7 @@
 .chezmoiscripts/darwin/**
 .config/homebrew
 {{ end }}
+
+{{ if ne .chezmoi.os "linux" }}
+.chezmoiscripts/linux/**
+{{ end }}

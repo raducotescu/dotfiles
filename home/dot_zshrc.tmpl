@@ -94,7 +94,9 @@ plugins=(
 # User configuration
 [ -f "$HOME/.zsh-secrets" ] && source "$HOME/.zsh-secrets"
 
+{{- if eq .chezmoi.os "darwin" }}
 test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
+{{- end }}
 
 #export SDKMAN_DIR="$HOME/.sdkman"
 #[[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
@@ -146,7 +148,9 @@ zstyle :bracketed-paste-magic paste-finish pastefinish
 zle_highlight=('paste:none')
 autoload -Uz bracketed-paste-magic
 zle -N bracketed-paste bracketed-paste-magic
-source ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/fast-syntax-highlighting/fast-syntax-highlighting.plugin.zsh
+if [[ -r "${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/fast-syntax-highlighting/fast-syntax-highlighting.plugin.zsh" ]]; then
+  source "${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/fast-syntax-highlighting/fast-syntax-highlighting.plugin.zsh"
+fi
 
 
 # You may need to manually set your language environment
@@ -179,7 +183,10 @@ function listening() {
     fi
 }
 
-eval "$(op completion zsh)"; compdef _op op
+if [[ "{{ .chezmoi.os }}" == "darwin" ]] && command -v op >/dev/null 2>&1; then
+  eval "$(op completion zsh)"
+  compdef _op op
+fi
 
 export GPG_TTY=$TTY
 
@@ -192,40 +199,55 @@ bindkey '^[[F' end-of-line
 bindkey '^[OF' end-of-line
 
 # Search history based on current input with Up/Down
-bindkey "^[[A" history-substring-search-up
-bindkey "^[[B" history-substring-search-down
+if whence -w history-substring-search-up >/dev/null 2>&1; then
+  bindkey "^[[A" history-substring-search-up
+fi
+if whence -w history-substring-search-down >/dev/null 2>&1; then
+  bindkey "^[[B" history-substring-search-down
+fi
 
 export NVM_DIR="$HOME/.nvm"
-  [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"  # This loads nvm
-  [ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"  # This loads nvm bash_completion
+if command -v brew >/dev/null 2>&1; then
+  nvm_prefix="$(brew --prefix nvm 2>/dev/null || true)"
+  [ -n "$nvm_prefix" ] && [ -s "${nvm_prefix}/nvm.sh" ] && \. "${nvm_prefix}/nvm.sh"
+  [ -n "$nvm_prefix" ] && [ -s "${nvm_prefix}/etc/bash_completion.d/nvm" ] && \. "${nvm_prefix}/etc/bash_completion.d/nvm"
+fi
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 
-fpath=(/Users/radu/.docker/completions $fpath)
+if [[ -d "${HOME}/.docker/completions" ]]; then
+  fpath=("${HOME}/.docker/completions" $fpath)
+fi
 
 {{ if .work }}
-###-begin-nui-completions-###
-#
-# yargs command completion script
-#
-# Installation: /opt/homebrew/bin/nui bash-completion >> ~/.zshrc
-#    or /opt/homebrew/bin/nui bash-completion >> ~/.zsh_profile on OSX.
-#
-_nui_yargs_completions() {
-  local -a reply
-  local si=$IFS
-  IFS=$'\n' reply=($(COMP_CWORD="$((_CURRENT-1))" COMP_LINE="$_BUFFER" COMP_POINT="$_CURSOR" /opt/homebrew/bin/nui --get-yargs-completions "${words[@]}"))
-  IFS=$si
+if command -v nui >/dev/null 2>&1; then
+  ###-begin-nui-completions-###
+  #
+  # yargs command completion script
+  #
+  # Installation: /opt/homebrew/bin/nui bash-completion >> ~/.zshrc
+  #    or /opt/homebrew/bin/nui bash-completion >> ~/.zsh_profile on OSX.
+  #
+  _nui_yargs_completions() {
+    local -a reply
+    local si=$IFS
+    IFS=$'\n' reply=($(COMP_CWORD="$((_CURRENT-1))" COMP_LINE="$_BUFFER" COMP_POINT="$_CURSOR" nui --get-yargs-completions "${words[@]}"))
+    IFS=$si
 
-  # Strip descriptions (if format is 'option:description') from all elements
-  reply=("${reply[@]%%:*}")
+    # Strip descriptions (if format is 'option:description') from all elements
+    reply=("${reply[@]%%:*}")
 
-  compadd -Q -a reply
-}
+    compadd -Q -a reply
+  }
 
-compdef _nui_yargs_completions nui
-###-end-nui-completions-###
+  compdef _nui_yargs_completions nui
+  ###-end-nui-completions-###
+fi
 
 export KUBECONFIG=$HOME/.kube/config #:$HOME/workspace/adobe/code/k8s-kubeconfig/kubeconfig.yaml
-. <(sky --quiet autocomplete --completion)
+if command -v sky >/dev/null 2>&1; then
+  . <(sky --quiet autocomplete --completion)
+fi
 
 export CM_URL="https://ssg.adobe.io"
 
