@@ -35,10 +35,6 @@
 {{-   $zshPlugins = append $zshPlugins "kubectl" -}}
 {{- end -}}
 
-{{- if eq .chezmoi.os "linux" }}
-scriptTempDir = "{{ .chezmoi.homeDir }}/.cache/chezmoi/scripts"
-{{- end }}
-
 [data]
     email = {{ $email | quote }}
     work = {{ $work }}
@@ -46,6 +42,9 @@ scriptTempDir = "{{ .chezmoi.homeDir }}/.cache/chezmoi/scripts"
     personal = {{ $personal }}
     osid = {{ $osID | quote }}
     zshPlugins = [{{- range $index, $plugin := $zshPlugins }}{{ if $index }}, {{ end }}{{ $plugin | quote }}{{- end }}]
+    {{- if eq .chezmoi.os "linux" }}
+    scriptTempDir = "{{ .chezmoi.homeDir }}/.cache/chezmoi/scripts"
+    {{- end }}    
 
 [github]
     refreshPeriod = "12h"
