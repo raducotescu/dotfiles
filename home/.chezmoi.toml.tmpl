@@ -35,6 +35,18 @@
 {{-   $zshPlugins = append $zshPlugins "kubectl" -}}
 {{- end -}}
 
+{{- $isDSM := false -}}
+{{- if eq .chezmoi.os "linux" -}}
+  {{- if and (hasKey .chezmoi.osRelease "id") (eq .chezmoi.osRelease.id "synology") -}}
+    {{- $isDSM = true -}}
+  {{- else -}}
+    {{- $major := output "sh" "-c" "sed -n 's/^majorversion=\"\\([0-9]\\+\\)\"$/\\1/p' /etc.defaults/VERSION 2>/dev/null" | trim -}}
+    {{- if ne $major "" -}}
+      {{- $isDSM = true -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
 [data]
     email = {{ $email | quote }}
     work = {{ $work }}
@@ -44,7 +56,9 @@
     zshPlugins = [{{- range $index, $plugin := $zshPlugins }}{{ if $index }}, {{ end }}{{ $plugin | quote }}{{- end }}]
     {{- if eq .chezmoi.os "linux" }}
     scriptTempDir = "{{ .chezmoi.homeDir }}/.cache/chezmoi/scripts"
-    {{- end }}    
+    {{- end }}
+    isDSM = {{ $isDSM }}
+
 
 [github]
     refreshPeriod = "12h"
