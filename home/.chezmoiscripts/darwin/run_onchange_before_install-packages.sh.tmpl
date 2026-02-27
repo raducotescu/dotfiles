@@ -129,6 +129,8 @@ EOF
 
 brew bundle --file="$brewfile"
 
+mkdir ~/.nvm
+
 casks=(
 {{- range ($casks | sortAlpha | uniq) }}
   "{{ . }}"
