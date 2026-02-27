@@ -77,6 +77,223 @@ set -eufo pipefail
     "visual-studio-code"
 -}}
 
+# SSH key secret references.
+# You can override any value via environment variables before running chezmoi.
+# Supported profiles: personal, work (defaults to machine profile from chezmoi data).
+DEFAULT_SSH_KEY_PROFILE="{{ if .work }}work{{ else }}personal{{ end }}"
+SSH_KEY_PROFILE="${SSH_KEY_PROFILE:-${CHEZMOI_PROFILE:-${DEFAULT_SSH_KEY_PROFILE}}}"
+
+case "${SSH_KEY_PROFILE}" in
+    work)
+        DEFAULT_WORK_ID_RSA_PRIVATE_KEY_REF="op://Adobe/ldoe4gail3rnpfrzynhxbjg4my/private key"
+        DEFAULT_WORK_ID_RSA_PUBLIC_KEY_REF="op://Adobe/ldoe4gail3rnpfrzynhxbjg4my/public key"
+        ;;
+    *)
+        DEFAULT_WORK_ID_RSA_PRIVATE_KEY_REF=""
+        DEFAULT_WORK_ID_RSA_PUBLIC_KEY_REF=""
+        ;;
+esac
+
+PERSONAL_ID_RSA_PRIVATE_KEY_REF="${OP_PERSONAL_ID_RSA_PRIVATE_KEY_REF:-${OP_PRIVATE_RSA_SSH_PRIVATE_KEY_REF:-op://Private/Private RSA SSH Key/private key}}"
+PERSONAL_ID_RSA_PUBLIC_KEY_REF="${OP_PERSONAL_ID_RSA_PUBLIC_KEY_REF:-${OP_PRIVATE_RSA_SSH_PUBLIC_KEY_REF:-op://Private/Private RSA SSH Key/public key}}"
+PERSONAL_ID_ED25519_PRIVATE_KEY_REF="${OP_PERSONAL_ID_ED25519_PRIVATE_KEY_REF:-${OP_PRIVATE_ED25519_SSH_PRIVATE_KEY_REF:-op://Private/Private Ed25519 SSH Key/private key}}"
+PERSONAL_ID_ED25519_PUBLIC_KEY_REF="${OP_PERSONAL_ID_ED25519_PUBLIC_KEY_REF:-${OP_PRIVATE_ED25519_SSH_PUBLIC_KEY_REF:-op://Private/Private Ed25519 SSH Key/public key}}"
+WORK_ID_RSA_PRIVATE_KEY_REF="${OP_WORK_ID_RSA_PRIVATE_KEY_REF:-${OP_ADOBE_GIT_SSH_PRIVATE_KEY_REF:-${DEFAULT_WORK_ID_RSA_PRIVATE_KEY_REF}}}"
+WORK_ID_RSA_PUBLIC_KEY_REF="${OP_WORK_ID_RSA_PUBLIC_KEY_REF:-${OP_ADOBE_GIT_SSH_PUBLIC_KEY_REF:-${DEFAULT_WORK_ID_RSA_PUBLIC_KEY_REF}}}"
+WORK_GHEC_PUBLIC_KEY_REF="${OP_WORK_GHEC_PUBLIC_KEY_REF:-${OP_ADOBE_GHEC_SSH_PUBLIC_KEY_REF:-op://Adobe/Adobe GHEC auth key/public key}}"
+
+op_read_with_prompt() {
+    local op_ref="$1"
+    local dest_path="$2"
+    local mode="$3"
+    local attempt=1
+    local max_attempts=3
+
+    while (( attempt <= max_attempts )); do
+        if op read "${op_ref}" >"${dest_path}"; then
+            chmod "${mode}" "${dest_path}"
+            return 0
+        fi
+
+        if (( attempt == max_attempts )); then
+            echo "Unable to read '${op_ref}' after ${max_attempts} attempts." >&2
+            echo "Run 'op signin' (or unlock the 1Password app), then rerun chezmoi apply." >&2
+            return 1
+        fi
+
+        if [[ ! -r /dev/tty ]]; then
+            echo "1Password sign-in is required, but no TTY is available for interactive prompts." >&2
+            return 1
+        fi
+
+        echo "1Password access is required to read '${op_ref}'." >&2
+        echo "Sign in/unlock 1Password, then press Enter to retry (attempt ${attempt}/${max_attempts})." >&2
+        read -r _ </dev/tty
+        attempt=$((attempt + 1))
+    done
+}
+
+expand_identity_path() {
+    local raw_path="$1"
+
+    raw_path="${raw_path%\"}"
+    raw_path="${raw_path#\"}"
+    raw_path="${raw_path%\'}"
+    raw_path="${raw_path#\'}"
+
+    if [[ "${raw_path}" == "~/"* ]]; then
+        printf '%s\n' "${HOME}/${raw_path#~/}"
+        return 0
+    fi
+
+    if [[ "${raw_path}" != /* ]]; then
+        printf '%s\n' "${HOME}/.ssh/${raw_path}"
+        return 0
+    fi
+
+    printf '%s\n' "${raw_path}"
+}
+
+resolve_private_op_ref() {
+    local identity_path="$1"
+
+    case "${identity_path}" in
+        "${HOME}/.ssh/git.corp.adobe.com/id_rsa"|"/Users/radu/.ssh/git.corp.adobe.com/id_rsa")
+            [[ -n "${WORK_ID_RSA_PRIVATE_KEY_REF}" ]] || return 1
+            printf '%s\n' "${WORK_ID_RSA_PRIVATE_KEY_REF}"
+            ;;
+        "${HOME}/.ssh/id_rsa")
+            printf '%s\n' "${PERSONAL_ID_RSA_PRIVATE_KEY_REF}"
+            ;;
+        "${HOME}/.ssh/id_ed25519")
+            printf '%s\n' "${PERSONAL_ID_ED25519_PRIVATE_KEY_REF}"
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+resolve_public_op_ref() {
+    local identity_path="$1"
+
+    case "${identity_path}" in
+        "${HOME}/.ssh/git.corp.adobe.com/id_rsa.pub"|"/Users/radu/.ssh/git.corp.adobe.com/id_rsa.pub"|"${HOME}/.ssh/cotescu@adobe.com.pub")
+            [[ -n "${WORK_ID_RSA_PUBLIC_KEY_REF}" ]] || return 1
+            printf '%s\n' "${WORK_ID_RSA_PUBLIC_KEY_REF}"
+            ;;
+        "${HOME}/.ssh/ghec.pub")
+            printf '%s\n' "${WORK_GHEC_PUBLIC_KEY_REF}"
+            ;;
+        "${HOME}/.ssh/id_rsa.pub")
+            printf '%s\n' "${PERSONAL_ID_RSA_PUBLIC_KEY_REF}"
+            ;;
+        "${HOME}/.ssh/id_ed25519.pub")
+            printf '%s\n' "${PERSONAL_ID_ED25519_PUBLIC_KEY_REF}"
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+ensure_identity_file() {
+    local identity_path="$1"
+    local op_ref=""
+    local pub_path=""
+
+    mkdir -p "$(dirname "${identity_path}")"
+    umask 077
+
+    if [[ "${identity_path}" == *.pub ]]; then
+        if [[ -s "${identity_path}" ]]; then
+            return 0
+        fi
+
+        if op_ref="$(resolve_public_op_ref "${identity_path}")"; then
+            op_read_with_prompt "${op_ref}" "${identity_path}" 644 || return 1
+            return 0
+        fi
+
+        echo "No 1Password mapping found for public key '${identity_path}'. Skipping." >&2
+        return 0
+    fi
+
+    if [[ ! -s "${identity_path}" ]]; then
+        if op_ref="$(resolve_private_op_ref "${identity_path}")"; then
+            op_read_with_prompt "${op_ref}" "${identity_path}" 600 || return 1
+        else
+            echo "No 1Password mapping found for private key '${identity_path}'. Skipping." >&2
+        fi
+    fi
+
+    pub_path="${identity_path}.pub"
+    if [[ -s "${pub_path}" ]]; then
+        return 0
+    fi
+
+    if op_ref="$(resolve_public_op_ref "${pub_path}")"; then
+        op_read_with_prompt "${op_ref}" "${pub_path}" 644 || return 1
+    fi
+}
+
+ensure_ssh_prereqs() {
+    local config_path="${HOME}/.ssh/config"
+    local line=""
+    local identity_raw=""
+    local identity_path=""
+    local missing_casks=()
+    local -a identity_paths=()
+
+    for cask in 1password 1password-cli; do
+        if ! brew list --cask "${cask}" >/dev/null 2>&1; then
+            missing_casks+=("${cask}")
+        fi
+    done
+
+    if (( ${#missing_casks[@]} > 0 )); then
+        brew install --cask "${missing_casks[@]}"
+    fi
+
+    if ! command -v op >/dev/null 2>&1; then
+        echo "1Password CLI is not available. Install 1Password and rerun chezmoi apply." >&2
+        exit 1
+    fi
+
+    if [[ ! -f "${config_path}" ]]; then
+        echo "SSH config not found at '${config_path}'. Skipping SSH key extraction." >&2
+        return 0
+    fi
+
+    while IFS= read -r line || [[ -n "${line}" ]]; do
+        line="${line%%#*}"
+        if [[ ! "${line}" =~ ^[[:space:]]*[Ii][Dd][Ee][Nn][Tt][Ii][Tt][Yy][Ff][Ii][Ll][Ee][[:space:]]+(.+)$ ]]; then
+            continue
+        fi
+
+        identity_raw="${BASH_REMATCH[1]}"
+        identity_raw="${identity_raw#"${identity_raw%%[![:space:]]*}"}"
+        identity_raw="${identity_raw%%[[:space:]]*}"
+        if [[ -z "${identity_raw}" ]]; then
+            continue
+        fi
+        if [[ "${identity_raw}" == "none" ]]; then
+            continue
+        fi
+
+        identity_path="$(expand_identity_path "${identity_raw}")"
+        if [[ " ${identity_paths[*]} " != *" ${identity_path} "* ]]; then
+            identity_paths+=("${identity_path}")
+        fi
+    done < "${config_path}"
+
+    for identity_path in "${identity_paths[@]}"; do
+        ensure_identity_file "${identity_path}" || exit 1
+    done
+}
+
+ensure_ssh_prereqs
+
 {{ if .work -}}
 export HOMEBREW_GITHUB_ADOBE_API_TOKEN={{ onepasswordRead "op://Adobe/Homebrew GitHub Adobe Token/credential" | trim }}
 brew tap "adobe-marketing-cloud/brews"
@@ -153,4 +370,3 @@ casks=(
 )
 
 brew install --force --cask "${casks[@]}"
-
