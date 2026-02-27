@@ -78,29 +78,9 @@ set -eufo pipefail
 -}}
 
 # SSH key secret references.
-# You can override any value via environment variables before running chezmoi.
 # Supported profiles: personal, work (defaults to machine profile from chezmoi data).
 DEFAULT_SSH_KEY_PROFILE="{{ if .work }}work{{ else }}personal{{ end }}"
 SSH_KEY_PROFILE="${SSH_KEY_PROFILE:-${CHEZMOI_PROFILE:-${DEFAULT_SSH_KEY_PROFILE}}}"
-
-case "${SSH_KEY_PROFILE}" in
-    work)
-        DEFAULT_WORK_ID_RSA_PRIVATE_KEY_REF="op://Adobe/ldoe4gail3rnpfrzynhxbjg4my/private key"
-        DEFAULT_WORK_ID_RSA_PUBLIC_KEY_REF="op://Adobe/ldoe4gail3rnpfrzynhxbjg4my/public key"
-        ;;
-    *)
-        DEFAULT_WORK_ID_RSA_PRIVATE_KEY_REF=""
-        DEFAULT_WORK_ID_RSA_PUBLIC_KEY_REF=""
-        ;;
-esac
-
-PERSONAL_ID_RSA_PRIVATE_KEY_REF="${OP_PERSONAL_ID_RSA_PRIVATE_KEY_REF:-${OP_PRIVATE_RSA_SSH_PRIVATE_KEY_REF:-op://Private/Private RSA SSH Key/private key}}"
-PERSONAL_ID_RSA_PUBLIC_KEY_REF="${OP_PERSONAL_ID_RSA_PUBLIC_KEY_REF:-${OP_PRIVATE_RSA_SSH_PUBLIC_KEY_REF:-op://Private/Private RSA SSH Key/public key}}"
-PERSONAL_ID_ED25519_PRIVATE_KEY_REF="${OP_PERSONAL_ID_ED25519_PRIVATE_KEY_REF:-${OP_PRIVATE_ED25519_SSH_PRIVATE_KEY_REF:-op://Private/Private Ed25519 SSH Key/private key}}"
-PERSONAL_ID_ED25519_PUBLIC_KEY_REF="${OP_PERSONAL_ID_ED25519_PUBLIC_KEY_REF:-${OP_PRIVATE_ED25519_SSH_PUBLIC_KEY_REF:-op://Private/Private Ed25519 SSH Key/public key}}"
-WORK_ID_RSA_PRIVATE_KEY_REF="${OP_WORK_ID_RSA_PRIVATE_KEY_REF:-${OP_ADOBE_GIT_SSH_PRIVATE_KEY_REF:-${DEFAULT_WORK_ID_RSA_PRIVATE_KEY_REF}}}"
-WORK_ID_RSA_PUBLIC_KEY_REF="${OP_WORK_ID_RSA_PUBLIC_KEY_REF:-${OP_ADOBE_GIT_SSH_PUBLIC_KEY_REF:-${DEFAULT_WORK_ID_RSA_PUBLIC_KEY_REF}}}"
-WORK_GHEC_PUBLIC_KEY_REF="${OP_WORK_GHEC_PUBLIC_KEY_REF:-${OP_ADOBE_GHEC_SSH_PUBLIC_KEY_REF:-op://Adobe/Adobe GHEC auth key/public key}}"
 
 op_read_with_prompt() {
     local op_ref="$1"
@@ -136,10 +116,17 @@ op_read_with_prompt() {
 expand_identity_path() {
     local raw_path="$1"
 
+    raw_path="${raw_path#"${raw_path%%[![:space:]]*}"}"
+    raw_path="${raw_path%"${raw_path##*[![:space:]]}"}"
     raw_path="${raw_path%\"}"
     raw_path="${raw_path#\"}"
     raw_path="${raw_path%\'}"
     raw_path="${raw_path#\'}"
+
+    if [[ "${raw_path}" == "${HOME}/~/"* ]]; then
+        printf '%s\n' "${HOME}/${raw_path#"${HOME}/~/"}"
+        return 0
+    fi
 
     if [[ "${raw_path}" == "~/"* ]]; then
         printf '%s\n' "${HOME}/${raw_path#~/}"
@@ -154,45 +141,74 @@ expand_identity_path() {
     printf '%s\n' "${raw_path}"
 }
 
-resolve_private_op_ref() {
+normalize_identity_path() {
     local identity_path="$1"
 
-    case "${identity_path}" in
-        "${HOME}/.ssh/git.corp.adobe.com/id_rsa"|"/Users/radu/.ssh/git.corp.adobe.com/id_rsa")
-            [[ -n "${WORK_ID_RSA_PRIVATE_KEY_REF}" ]] || return 1
-            printf '%s\n' "${WORK_ID_RSA_PRIVATE_KEY_REF}"
-            ;;
-        "${HOME}/.ssh/id_rsa")
-            printf '%s\n' "${PERSONAL_ID_RSA_PRIVATE_KEY_REF}"
-            ;;
-        "${HOME}/.ssh/id_ed25519")
-            printf '%s\n' "${PERSONAL_ID_ED25519_PRIVATE_KEY_REF}"
-            ;;
-        *)
-            return 1
-            ;;
-    esac
+    identity_path="${identity_path#"${identity_path%%[![:space:]]*}"}"
+    identity_path="${identity_path%"${identity_path##*[![:space:]]}"}"
+    identity_path="${identity_path%\"}"
+    identity_path="${identity_path#\"}"
+    identity_path="${identity_path%\'}"
+    identity_path="${identity_path#\'}"
+
+    if [[ "${identity_path}" == "${HOME}/~/"* ]]; then
+        printf '%s\n' "${HOME}/${identity_path#"${HOME}/~/"}"
+        return 0
+    fi
+
+    if [[ "${identity_path}" == "~/"* ]]; then
+        printf '%s\n' "${HOME}/${identity_path#~/}"
+        return 0
+    fi
+
+    printf '%s\n' "${identity_path}"
+}
+
+resolve_private_op_ref() {
+    local identity_path="$1"
+    local public_op_ref=""
+
+    identity_path="$(normalize_identity_path "${identity_path}")"
+    public_op_ref="$(resolve_public_op_ref "${identity_path}.pub")" || return 1
+    [[ "${public_op_ref}" == *"/public key" ]] || return 1
+    printf '%s\n' "${public_op_ref%/public key}/private key"
 }
 
 resolve_public_op_ref() {
     local identity_path="$1"
+    local profile="${SSH_KEY_PROFILE}"
 
-    case "${identity_path}" in
-        "${HOME}/.ssh/git.corp.adobe.com/id_rsa.pub"|"/Users/radu/.ssh/git.corp.adobe.com/id_rsa.pub"|"${HOME}/.ssh/cotescu@adobe.com.pub")
-            [[ -n "${WORK_ID_RSA_PUBLIC_KEY_REF}" ]] || return 1
-            printf '%s\n' "${WORK_ID_RSA_PUBLIC_KEY_REF}"
-            ;;
-        "${HOME}/.ssh/ghec.pub")
-            printf '%s\n' "${WORK_GHEC_PUBLIC_KEY_REF}"
-            ;;
-        "${HOME}/.ssh/id_rsa.pub")
-            printf '%s\n' "${PERSONAL_ID_RSA_PUBLIC_KEY_REF}"
-            ;;
-        "${HOME}/.ssh/id_ed25519.pub")
-            printf '%s\n' "${PERSONAL_ID_ED25519_PUBLIC_KEY_REF}"
+    identity_path="$(normalize_identity_path "${identity_path}")"
+
+    case "${profile}" in
+        work)
+            case "${identity_path}" in
+                "${HOME}/.ssh/id_rsa.pub")
+                    printf '%s\n' "op://Adobe/id_rsa/public key"
+                    ;;
+                "${HOME}/.ssh/git.corp.adobe.com/id_rsa.pub"|"${HOME}/.ssh/cotescu@adobe.com.pub")
+                    printf '%s\n' "op://Adobe/ldoe4gail3rnpfrzynhxbjg4my/public key"
+                    ;;
+                "${HOME}/.ssh/ghec.pub")
+                    printf '%s\n' "op://Adobe/Adobe GHEC auth key/public key"
+                    ;;
+                *)
+                    return 1
+                    ;;
+            esac
             ;;
         *)
-            return 1
+            case "${identity_path}" in
+                "${HOME}/.ssh/id_rsa.pub")
+                    printf '%s\n' "op://Private/Private RSA SSH Key/public key"
+                    ;;
+                "${HOME}/.ssh/id_ed25519.pub")
+                    printf '%s\n' "op://Private/Private Ed25519 SSH Key/public key"
+                    ;;
+                *)
+                    return 1
+                    ;;
+            esac
             ;;
     esac
 }
@@ -201,6 +217,8 @@ ensure_identity_file() {
     local identity_path="$1"
     local op_ref=""
     local pub_path=""
+
+    identity_path="$(normalize_identity_path "${identity_path}")"
 
     mkdir -p "$(dirname "${identity_path}")"
     umask 077
@@ -273,7 +291,7 @@ ensure_ssh_prereqs() {
 
         identity_raw="${BASH_REMATCH[1]}"
         identity_raw="${identity_raw#"${identity_raw%%[![:space:]]*}"}"
-        identity_raw="${identity_raw%%[[:space:]]*}"
+        identity_raw="${identity_raw%"${identity_raw##*[![:space:]]}"}"
         if [[ -z "${identity_raw}" ]]; then
             continue
         fi
