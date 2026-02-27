@@ -48,6 +48,7 @@ defaults write -g com.apple.trackpad.forceClick -int 0
 
 # Automatically hides and shows the Dock.
 defaults write com.apple.dock autohide -int 1
+defaults write com.apple.dock autohide-time-modifier -float 0.2
 # Sets the Dock position on screen.
 defaults write com.apple.dock orientation -string bottom
 # Shows or hides recent applications in the Dock.
@@ -69,3 +70,5 @@ defaults write com.apple.finder _FXSortFoldersFirst -int 1
 defaults write com.apple.finder FXRemoveOldTrashItems -int 1
 # Shows or suppresses warnings when changing file extensions.
 defaults write com.apple.finder FXEnableExtensionChangeWarning -int 0
+
+killall Dock

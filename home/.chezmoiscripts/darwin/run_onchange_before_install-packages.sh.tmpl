@@ -77,6 +77,7 @@ set -eufo pipefail
 -}}
 
 {{ if .work -}}
+export HOMEBREW_GITHUB_ADOBE_API_TOKEN={{ onepasswordRead "op://Adobe/Homebrew GitHub Adobe Token/credential" | trim }}
 brew tap "adobe-marketing-cloud/brews"
 brew tap "argoproj/tap"
 brew tap "azure/kubelogin"
