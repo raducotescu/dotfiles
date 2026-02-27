@@ -129,7 +129,22 @@ EOF
 
 brew bundle --file="$brewfile"
 
-mkdir ~/.nvm
+mkdir -p "$HOME/.nvm"
+
+if command -v brew >/dev/null 2>&1; then
+  nvm_prefix="$(brew --prefix nvm 2>/dev/null || true)"
+  if [[ -n "$nvm_prefix" && -s "${nvm_prefix}/nvm.sh" ]]; then
+    # shellcheck source=/dev/null
+    . "${nvm_prefix}/nvm.sh"
+  fi
+fi
+
+if command -v nvm >/dev/null 2>&1; then
+  nvm install --lts
+  nvm alias default 'lts/*'
+else
+  echo "nvm is installed but not available in this shell; skipping Node LTS install." >&2
+fi
 
 casks=(
 {{- range ($casks | sortAlpha | uniq) }}
@@ -138,5 +153,4 @@ casks=(
 )
 
 brew install --force --cask "${casks[@]}"
-
 
