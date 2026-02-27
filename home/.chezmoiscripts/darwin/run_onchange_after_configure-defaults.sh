@@ -4,6 +4,8 @@ set -eufo pipefail
 
 # Controls two-finger swipe navigation (back/forward) behavior.
 defaults write -g AppleEnableSwipeNavigateWithScrolls -int 1
+# Controls mouse swipe navigation (back/forward) behavior.
+defaults write -g AppleEnableMouseSwipeNavigateWithScrolls -int 1
 # Controls whether windows minimize when double-clicking their title bar.
 defaults write -g AppleMiniaturizeOnDoubleClick -int 0
 # Controls press-and-hold for accented characters vs key repeat.
@@ -46,6 +48,15 @@ defaults write -g com.apple.swipescrolldirection -int 0
 # Enables or disables Force Click on supported trackpads.
 defaults write -g com.apple.trackpad.forceClick -int 0
 
+# Sets "Swipe between full-screen applications" to three-finger horizontal swipes.
+defaults write com.apple.AppleMultitouchTrackpad TrackpadThreeFingerHorizSwipeGesture -int 2
+defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadThreeFingerHorizSwipeGesture -int 2
+defaults write com.apple.AppleMultitouchTrackpad TrackpadFourFingerHorizSwipeGesture -int 0
+defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadFourFingerHorizSwipeGesture -int 0
+# Enables Notification Center via two-finger swipe from the right edge.
+defaults write com.apple.AppleMultitouchTrackpad TrackpadTwoFingerFromRightEdgeSwipeGesture -int 3
+defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadTwoFingerFromRightEdgeSwipeGesture -int 3
+
 # Automatically hides and shows the Dock.
 defaults write com.apple.dock autohide -int 1
 defaults write com.apple.dock autohide-time-modifier -float 0.2
@@ -54,11 +65,13 @@ defaults write com.apple.dock orientation -string bottom
 # Shows or hides recent applications in the Dock.
 defaults write com.apple.dock show-recents -int 0
 # Enables or disables the trackpad gesture for Show Desktop.
-defaults write com.apple.dock showDesktopGestureEnabled -int 0
+defaults write com.apple.dock showDesktopGestureEnabled -int 1
 # Enables or disables the trackpad gesture for Launchpad.
 defaults write com.apple.dock showLaunchpadGestureEnabled -int 0
 # Enables or disables the trackpad gesture for Mission Control.
-defaults write com.apple.dock showMissionControlGestureEnabled -int 0
+defaults write com.apple.dock showMissionControlGestureEnabled -int 1
+# Enables or disables the trackpad gesture for App Expose.
+defaults write com.apple.dock showAppExposeGestureEnabled -int 1
 
 # Displays the full POSIX path in Finder window titles.
 defaults write com.apple.finder _FXShowPosixPathInTitle -int 1
