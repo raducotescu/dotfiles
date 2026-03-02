@@ -157,6 +157,8 @@ defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad UserPreference
 defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad version -int 5
 
 # Mirrors current host-specific trackpad preferences.
+# Controls two-finger swipe navigation (back/forward) behavior on this host.
+defaults -currentHost write -g AppleEnableSwipeNavigateWithScrolls -int 1
 # Secondary click enablement.
 defaults -currentHost write -g com.apple.trackpad.enableSecondaryClick -int 1
 # Five-finger pinch gesture behavior.
