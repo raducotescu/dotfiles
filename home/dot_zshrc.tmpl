@@ -98,13 +98,10 @@ plugins=(
 test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
 {{- end }}
 
-#export SDKMAN_DIR="$HOME/.sdkman"
-#[[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
-
 export FZF_DEFAULT_COMMAND='(git ls-tree -r --name-only HEAD || fd --type f) 2> /dev/null'
 export FZF_DEFAULT_OPTS="--preview '[[ \$(file --mime {}) =~ binary ]] && echo {} is a binary file || (bat --style=numbers --color=always {} cat {}) 2> /dev/null | head -500'"
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
-alias ccc="cd \`fd --no-ignore --type d . ~/workspace | fzf\`"
+alias ccc='cd "$(fd --no-ignore --type d . ~/workspace | fzf)"'
 
 # Improved completion behaviour
 zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=*'
@@ -154,7 +151,7 @@ fi
 
 
 # You may need to manually set your language environment
-export LANG=en_GB.UTF-8
+export LANG=en_US.UTF-8
 
 # Preferred editor for local and remote sessions
 if [[ -n $SSH_CONNECTION ]]; then
@@ -183,10 +180,13 @@ function listening() {
     fi
 }
 
-if [[ "{{ .chezmoi.os }}" == "darwin" ]] && command -v op >/dev/null 2>&1; then
+{{- if eq .chezmoi.os "darwin" }}
+if command -v op >/dev/null 2>&1; then
   eval "$(op completion zsh)"
   compdef _op op
 fi
+{{- end }}
+
 
 export GPG_TTY=$TTY
 
@@ -206,14 +206,19 @@ if whence -w history-substring-search-down >/dev/null 2>&1; then
   bindkey "^[[B" history-substring-search-down
 fi
 
-export NVM_DIR="$HOME/.nvm"
 if command -v brew >/dev/null 2>&1; then
   nvm_prefix="$(brew --prefix nvm 2>/dev/null || true)"
-  [ -n "$nvm_prefix" ] && [ -s "${nvm_prefix}/nvm.sh" ] && \. "${nvm_prefix}/nvm.sh"
-  [ -n "$nvm_prefix" ] && [ -s "${nvm_prefix}/etc/bash_completion.d/nvm" ] && \. "${nvm_prefix}/etc/bash_completion.d/nvm"
+  if [ -n "$nvm_prefix" ] && [ -s "${nvm_prefix}/nvm.sh" ]; then
+    \. "${nvm_prefix}/nvm.sh"
+    [ -s "${nvm_prefix}/etc/bash_completion.d/nvm" ] && \. "${nvm_prefix}/etc/bash_completion.d/nvm"
+  else
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+  fi
+else
+  [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+  [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 fi
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 
 if [[ -d "${HOME}/.docker/completions" ]]; then
   fpath=("${HOME}/.docker/completions" $fpath)
@@ -254,7 +259,7 @@ export CM_URL="https://ssg.adobe.io"
 if command -v kubectl &> /dev/null; then
    source <(kubectl completion zsh)
 fi
-# End of Docker CLI completions
+
 export API_GUIDELINES_PATH="/Users/radu/workspace/adobe/code/api-first-guidelines"
 export API_SCHEMAS_PATH="/Users/radu/workspace/adobe/code/api-schemas/api-first-schemas"
 export ASSETS_API_SCHEMA_PATH="/Users/radu/workspace/adobe/code/api-schemas/assets-api-schema"
@@ -262,13 +267,13 @@ export ASSETS_API_SCHEMA_PATH="/Users/radu/workspace/adobe/code/api-schemas/asse
 export CLAUDE_CODE_USE_BEDROCK=1
 export AWS_REGION=us-west-2  # or your preferred region
 
-# sonnet 4.5
+# sonnet 4.6
 # Optional: Override the region for the small/fast model (Haiku)
 export ANTHROPIC_SMALL_FAST_MODEL_AWS_REGION=us-west-2
-export ANTHROPIC_MODEL='us.anthropic.claude-sonnet-4-5-20250929-v1:0'
+export ANTHROPIC_MODEL='us.anthropic.claude-sonnet-4-6'
 export ANTHROPIC_SMALL_FAST_MODEL='us.anthropic.claude-haiku-4-5-20251001-v1:0'
 export ANTHROPIC_DEFAULT_HAIKU_MODEL='us.anthropic.claude-haiku-4-5-20251001-v1:0'
 export ANTHROPIC_DEFAULT_OPUS_MODEL='us.anthropic.claude-opus-4-5-20251101-v1:0'
-export ANTHROPIC_DEFAULT_SONNET_MODEL='us.anthropic.claude-sonnet-4-5-20250929-v1:0'
-export CLAUDE_CODE_SUBAGENT_MODEL='us.anthropic.claude-sonnet-4-5-20250929-v1:0'
+export ANTHROPIC_DEFAULT_SONNET_MODEL='us.anthropic.claude-sonnet-4-6'
+export CLAUDE_CODE_SUBAGENT_MODEL='us.anthropic.claude-sonnet-4-6'
 {{ end }}

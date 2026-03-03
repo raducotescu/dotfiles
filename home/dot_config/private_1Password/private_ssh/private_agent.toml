@@ -42,7 +42,7 @@ item = "SSH Key cotescu@adobe.com"
 
 [[ssh-keys]]
 vault = "Adobe"
-item = "SSH Key cotescu@adobe.com"
+item = "id_rsa"
 
 [[ssh-keys]]
 vault = "Adobe"
