@@ -11,7 +11,7 @@
 	editor = vim
 [difftool "sourcetree"]
 	cmd = opendiff \"$LOCAL\" \"$REMOTE\"
-	path = 
+	path =
 [mergetool "sourcetree"]
 	cmd = /Applications/Sourcetree.app/Contents/Resources/opendiff-w.sh \"$LOCAL\" \"$REMOTE\" -ancestor \"$BASE\" -merge \"$MERGED\"
 	trustExitCode = true
@@ -48,7 +48,6 @@
     hyperlinks = true
     true-color = always
 [credential]
-	helper = 
 	helper = /usr/local/share/gcm-core/git-credential-manager
 
 {{- if .work }}
@@ -57,7 +56,7 @@
 [credential "https://gitbox.apache.org"]
 	provider = generic
 [credential "https://git.cloudmanager.adobe.com"]
-	useHttpPath = true	
+	useHttpPath = true
 [credential "https://dev.azure.com"]
 	useHttpPath = true
 {{- end }}
