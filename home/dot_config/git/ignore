@@ -9,4 +9,4 @@
 .pc
 .svn
 .vscode
-/tmp
+**/.claude/settings.local.json
