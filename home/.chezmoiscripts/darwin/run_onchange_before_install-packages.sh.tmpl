@@ -15,8 +15,6 @@ set -eufo pipefail
     "git-filter-repo"
     "git-lfs"
     "gnutls"
-    "go"
-    "imagemagick"
     "iperf"
     "jq"
     "libraw"
@@ -65,8 +63,11 @@ set -eufo pipefail
     "home-assistant"
     "istat-menus"
     "iterm2"
-    "jetbrains-toolbox"
     "logi-options+"
+    "microsoft-auto-update"
+    "microsoft-excel"
+    "microsoft-teams"
+    "microsoft-word"
     "okta-verify"
     "pearcleaner"
     "sf-symbols"
@@ -92,6 +93,8 @@ brew tap "foundation/foundation" "git@git.corp.adobe.com:foundation/homebrew-fou
     "experience-platform/internal/cmcli"
     "experience-platform/internal/skyline-ops-cli"
     "ffmpeg"
+    "go"
+    "imagemagick"
     "helm"
     "k9s"
     "maven-completion"
@@ -101,6 +104,7 @@ brew tap "foundation/foundation" "git@git.corp.adobe.com:foundation/homebrew-fou
 
 {{ $casks = concat $casks (list
     "cursor"
+    "jetbrains-toolbox"
     "slack"
 ) -}}
 
