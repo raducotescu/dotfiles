@@ -50,6 +50,7 @@ set -eufo pipefail
     "bettertouchtool"
     "chatgpt"
     "claude"
+    "claude-code"
     "coconutbattery"
     "codex"
     "codex-app"
@@ -109,9 +110,6 @@ brew tap "foundation/foundation" "git@git.corp.adobe.com:foundation/homebrew-fou
     "slack"
 ) -}}
 
-if [[ ! "$(command -v claude)" ]]; then
-    curl -fsSL https://claude.ai/install.sh | bash
-fi
 
 {{ end -}}
 
