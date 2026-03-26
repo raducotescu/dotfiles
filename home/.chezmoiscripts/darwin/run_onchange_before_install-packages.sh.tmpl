@@ -21,7 +21,6 @@ set -eufo pipefail
     "mtr"
     "ncdu"
     "nmap"
-    "nvm"
     "parallel"
     "pinentry"
     "rsync"
@@ -50,7 +49,6 @@ set -eufo pipefail
     "bettertouchtool"
     "chatgpt"
     "claude"
-    "claude-code"
     "coconutbattery"
     "codex"
     "codex-app"
@@ -132,23 +130,6 @@ EOF
 
 brew bundle --file="$brewfile"
 
-mkdir -p "$HOME/.nvm"
-
-if command -v brew >/dev/null 2>&1; then
-  nvm_prefix="$(brew --prefix nvm 2>/dev/null || true)"
-  if [[ -n "$nvm_prefix" && -s "${nvm_prefix}/nvm.sh" ]]; then
-    # shellcheck source=/dev/null
-    . "${nvm_prefix}/nvm.sh"
-  fi
-fi
-
-if command -v nvm >/dev/null 2>&1; then
-  nvm install --lts
-  nvm alias default 'lts/*'
-else
-  echo "nvm is installed but not available in this shell; skipping Node LTS install." >&2
-fi
-
 casks=(
 {{- range ($casks | sortAlpha | uniq) }}
   "{{ . }}"
@@ -156,3 +137,78 @@ casks=(
 )
 
 brew install --force --cask "${casks[@]}"
+
+if [[ ! "$(command -v claude)" ]]; then
+  echo "Installing claude code using the native installer..."
+  curl -fsSL https://claude.ai/install.sh | bash
+fi
+
+
+export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+
+load_nvm() {
+  if [[ ! -s "$NVM_DIR/nvm.sh" ]]; then
+    return 1
+  fi
+
+  # shellcheck source=/dev/null
+  . "$NVM_DIR/nvm.sh"
+
+  if [[ -s "$NVM_DIR/bash_completion" ]]; then
+    # shellcheck source=/dev/null
+    . "$NVM_DIR/bash_completion"
+  fi
+}
+
+install_nvm() {
+  local latest_tag
+
+  if [[ -d "$NVM_DIR/.git" ]]; then
+    git -C "$NVM_DIR" fetch --tags origin
+  elif [[ -e "$NVM_DIR" ]]; then
+    echo "Cannot install nvm because $NVM_DIR already exists and is not a git checkout." >&2
+    return 1
+  else
+    git clone https://github.com/nvm-sh/nvm.git "$NVM_DIR"
+  fi
+
+  latest_tag="$(git -C "$NVM_DIR" describe --abbrev=0 --tags --match 'v[0-9]*' "$(git -C "$NVM_DIR" rev-list --tags --max-count=1)")"
+  git -C "$NVM_DIR" checkout "$latest_tag"
+}
+
+ensure_node_lts() {
+  local lts_version
+  local cache_dir
+
+  lts_version="$(nvm version-remote --lts)"
+  if [[ -z "$lts_version" || "$lts_version" == "N/A" ]]; then
+    nvm install --lts
+    nvm alias default 'lts/*'
+    return 0
+  fi
+
+  if nvm install "$lts_version"; then
+    nvm alias default 'lts/*'
+    return 0
+  fi
+
+  cache_dir="$NVM_DIR/.cache/bin/node-${lts_version}-$(nvm_get_os)-$(nvm_get_arch)"
+  echo "nvm install $lts_version failed; clearing stale cache and partial install before retrying..."
+  rm -rf "$cache_dir" "$NVM_DIR/versions/node/$lts_version"
+
+  nvm install "$lts_version"
+  nvm alias default 'lts/*'
+}
+
+if ! load_nvm; then
+  echo "Installing nvm..."
+  install_nvm
+  load_nvm
+fi
+
+if ! command -v nvm >/dev/null 2>&1; then
+  echo "nvm could not be loaded from $NVM_DIR." >&2
+  exit 1
+fi
+
+ensure_node_lts

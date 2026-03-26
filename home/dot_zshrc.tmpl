@@ -206,19 +206,15 @@ if whence -w history-substring-search-down >/dev/null 2>&1; then
   bindkey "^[[B" history-substring-search-down
 fi
 
-if command -v brew >/dev/null 2>&1; then
-  nvm_prefix="$(brew --prefix nvm 2>/dev/null || true)"
-  if [ -n "$nvm_prefix" ] && [ -s "${nvm_prefix}/nvm.sh" ]; then
-    \. "${nvm_prefix}/nvm.sh"
-    [ -s "${nvm_prefix}/etc/bash_completion.d/nvm" ] && \. "${nvm_prefix}/etc/bash_completion.d/nvm"
-  else
-    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
-  fi
-else
-  [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-  [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+# Load nvm if available
+export NVM_DIR="$HOME/.nvm"
+if [ -s "$NVM_DIR/nvm.sh" ]; then
+  . "$NVM_DIR/nvm.sh"
+  [ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
+
+  alias nvm_upgrade='(cd "$NVM_DIR" && git fetch --tags origin && git checkout "$(git describe --abbrev=0 --tags --match "v[0-9]*" "$(git rev-list --tags --max-count=1)")") && . "$NVM_DIR/nvm.sh"'
 fi
+
 
 if [[ -d "${HOME}/.docker/completions" ]]; then
   fpath=("${HOME}/.docker/completions" $fpath)
